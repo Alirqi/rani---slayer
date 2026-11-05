@@ -37,7 +37,7 @@ function render() {
   const cats = ["الكل", ...new Set(products.map(p => p.cat).filter(Boolean))];
   if (!cats.includes(filter)) filter = "الكل";
   document.getElementById("filters").innerHTML = cats.map(c =>
-    '<button class="chip '+(filter===c?"active":"")+'" onclick="setFilter('+JSON.stringify(c)+')">'+esc(c)+'</button>'
+    '<button class="chip '+(filter===c?"active":"")+'" onclick="setFilter('+esc(JSON.stringify(c))+')">'+esc(c)+'</button>'
   ).join("");
   const q = document.getElementById("search").value.trim().toLowerCase();
   const list = products.filter(p =>
