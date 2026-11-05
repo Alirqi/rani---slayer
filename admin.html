@@ -13,7 +13,7 @@
 <p class="muted">سجّل الدخول بحساب Supabase الذي أُضيف إلى قائمة المديرين.</p>
 <div class="field"><label>البريد الإلكتروني</label><input id="email" type="email" autocomplete="username"></div>
 <div class="field"><label>كلمة المرور</label><input id="password" type="password" autocomplete="current-password"></div>
-<button id="loginBtn">تسجيل الدخول</button>
+<div class="row"><button id="loginBtn">تسجيل الدخول</button><button class="secondary" id="signupBtn">إنشاء حساب مدير</button></div>
 <p id="loginMsg" role="status"></p>
 </section>
 <section id="app" class="hidden">
@@ -59,6 +59,15 @@ async function showApp(user){
  $("who").textContent=user.email||"مدير المتجر";$("uid").textContent=user.id;
  try{await refresh();}catch(e){msg("productMsg","تعذر تحميل لوحة الإدارة: "+e.message);}
 }
+$("signupBtn").onclick=async()=>{
+ const email=$("email").value.trim(),password=$("password").value;
+ if(!email||password.length<8){msg("loginMsg","أدخل البريد الإلكتروني وكلمة مرور لا تقل عن 8 أحرف.");return;}
+ $("signupBtn").disabled=true;msg("loginMsg","جار إنشاء الحساب...",true);
+ const {data,error}=await db.auth.signUp({email,password});
+ $("signupBtn").disabled=false;
+ if(error){msg("loginMsg","تعذر إنشاء الحساب: "+error.message);return;}
+ if(data.user){msg("loginMsg","تم إنشاء الحساب. معرّفك: "+data.user.id+" — أرسل هذا المعرّف لصاحب المتجر ليضيفك إلى قائمة المديرين. إذا طُلب تأكيد البريد، افتح رسالة التأكيد أولاً.",true);}
+};
 $("loginBtn").onclick=async()=>{
  $("loginBtn").disabled=true;msg("loginMsg","جار التحقق...",true);
  const {data,error}=await db.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
