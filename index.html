@@ -14,7 +14,7 @@
 <section id="offers" class="banner"><div><div class="eyebrow">عروض راني سلاير</div><h2>فرصتك لاختيار الأفضل</h2><p>تابع العروض والمنتجات الجديدة باستمرار.</p></div><a href="#products" class="btn gold" style="text-decoration:none">تصفح المنتجات</a></section>
 <section id="contact" class="sectionhead"><h2>نحن هنا لمساعدتك</h2><p>سيتم إضافة قنوات التواصل عند تجهيز بيانات المتجر.</p></section></main>
 <footer><div class="wrap">© <span id="year"></span> RANI SLAYER — جميع الحقوق محفوظة</div></footer>
-<div class="modal" id="cartModal" onclick="if(event.target===this)closeCart()"><div class="dialog"><div class="dialoghead"><h2>سلة المشتريات</h2><button class="btn" onclick="closeCart()">إغلاق ×</button></div><div id="cartItems"></div><div class="cartrow"><b>الإجمالي</b><strong class="price" id="total">0 ر.ي</strong></div><div class="field"><label>الاسم</label><input id="customer" placeholder="اسم العميل"></div><div class="field"><label>رقم الهاتف</label><input id="phone" type="tel" placeholder="رقم للتواصل"></div><div class="field"><label>العنوان</label><input id="address" placeholder="المدينة والمنطقة"></div><button class="btn gold" style="width:100%" onclick="placeOrder()">تأكيد الطلب التجريبي</button><div class="notice">هذه نسخة أولية. الطلبات تُحفظ محليًا في هذا المتصفح فقط، ولا تُرسل إلى المتجر أو تحصّل مدفوعات. يلزم ربط قاعدة بيانات وخادم آمن قبل استقبال طلبات حقيقية.</div></div></div>
+<div class="modal" id="cartModal" onclick="if(event.target===this)closeCart()"><div class="dialog"><div class="dialoghead"><h2>سلة المشتريات</h2><button class="btn" onclick="closeCart()">إغلاق ×</button></div><div id="cartItems"></div><div class="cartrow"><b>الإجمالي</b><strong class="price" id="total">0 ر.ي</strong></div><div class="field"><label>الاسم</label><input id="customer" placeholder="اسم العميل"></div><div class="field"><label>رقم الهاتف</label><input id="phone" type="tel" placeholder="رقم للتواصل"></div><div class="field"><label>العنوان</label><input id="address" placeholder="المدينة والمنطقة"></div><button class="btn gold" style="width:100%" onclick="placeOrder()">تأكيد الطلب</button><div class="notice">يتم إرسال طلبك إلى المتجر لحفظه ومراجعته. الدفع والتوصيل يتم تنسيقهما معك بعد تأكيد الطلب.</div></div></div>
 <script>
 const SUPABASE_URL = "https://xrlzsdccmibxyzezfvxb.supabase.co";
 const SUPABASE_KEY = "sb_publishable_W_PkS3AnzNs8rW7-Fk7mzQ_RYghdqOJ";
@@ -50,7 +50,7 @@ function render() {
       ? '<img src="'+esc(image)+'" alt="'+esc(p.name)+'" style="width:100%;height:100%;object-fit:cover">'
       : (p.cat.includes("إلكترون") ? "📱" : p.cat.includes("أزياء") ? "🎒" : "✦");
     const soldOut = Number(p.stock) < 1;
-    return '<article class="product"><div class="photo">'+visual+'</div><div class="pbody"><h3>'+esc(p.name)+'</h3><p>'+esc(p.desc)+'</p><span class="price">'+money(p.price)+'</span><div class="pfoot"><small>'+esc(p.cat)+' · '+(soldOut?"نفد المخزون":"المتوفر: "+esc(p.stock))+'</small><button class="btn gold" '+(soldOut?"disabled":"")+' onclick="add('+JSON.stringify(p.id)+')">'+(soldOut?"غير متوفر":"أضف للسلة +")+'</button></div></div></article>';
+    return '<article class="product"><div class="photo">'+visual+'</div><div class="pbody"><h3>'+esc(p.name)+'</h3><p>'+esc(p.desc)+'</p><span class="price">'+money(p.price)+'</span><div class="pfoot"><small>'+esc(p.cat)+' · '+(soldOut?"نفد المخزون":"المتوفر: "+esc(p.stock))+'</small><button class="btn gold" '+(soldOut?"disabled":"")+' onclick="add('+esc(JSON.stringify(p.id))+')">'+(soldOut?"غير متوفر":"أضف للسلة +")+'</button></div></div></article>';
   }).join("") : '<div class="empty">'+(products.length?"لا توجد منتجات مطابقة.":"لا توجد منتجات منشورة حالياً.")+'</div>';
 }
 function setFilter(value) { filter=value; render(); }
@@ -87,7 +87,7 @@ function drawCart(){
   const el=document.getElementById("cartItems");
   el.innerHTML=cart.length?cart.map(x=>{
     const p=products.find(p=>p.id===x.id);
-    return '<div class="cartrow"><div><b>'+esc(p.name)+'</b><div>'+money(p.price)+' × '+x.qty+'</div></div><div><button class="btn" onclick="change('+JSON.stringify(x.id)+',-1)">−</button> <button class="btn" onclick="change('+JSON.stringify(x.id)+',1)">+</button> <button class="btn" onclick="removeItem('+JSON.stringify(x.id)+')">حذف</button></div></div>';
+    return '<div class="cartrow"><div><b>'+esc(p.name)+'</b><div>'+money(p.price)+' × '+x.qty+'</div></div><div><button class="btn" onclick="change('+esc(JSON.stringify(x.id))+',-1)">−</button> <button class="btn" onclick="change('+esc(JSON.stringify(x.id))+',1)">+</button> <button class="btn" onclick="removeItem('+esc(JSON.stringify(x.id))+')">حذف</button></div></div>';
   }).join(""):'<p class="empty">سلتك فارغة.</p>';
   document.getElementById("total").textContent=money(cart.reduce((s,x)=>s+products.find(p=>p.id===x.id).price*x.qty,0));
   save();
