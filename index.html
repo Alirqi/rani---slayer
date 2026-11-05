@@ -10,7 +10,7 @@
 <header><div class="wrap nav"><a class="brand" href="#"><span>RS</span>RANI SLAYER</a><nav class="links"><a href="#home">الرئيسية</a><a href="#products">المنتجات</a><a href="#offers">العروض</a><a href="#contact">تواصل معنا</a></nav><button class="btn" onclick="openCart()">السلة <b id="count">0</b></button></div></header>
 <main class="wrap"><section class="hero" id="home"><div><div class="eyebrow">✦ أهلاً بك في عالم التسوق</div><h1>تسوّق بذكاء.<br><span>اختر الأفضل.</span></h1><p>اكتشف منتجات مختارة وعروضًا مميزة في مكان واحد. تجربة تسوق سهلة وسريعة بتصميم يناسب الهاتف والكمبيوتر.</p><a class="btn gold" href="#products" style="display:inline-block;text-decoration:none">اكتشف المنتجات ←</a></div><div class="hero-card"><div class="eyebrow">RANI SLAYER / MARKETPLACE</div><div style="font-size:70px;text-align:center">✦</div><div><strong>عروض تستحق التجربة</strong><p>كل ما تحتاجه… في مكان واحد</p></div></div></section>
 <div class="stats"><div class="stat"><b>24/7</b><small>تصفح في أي وقت</small></div><div class="stat"><b>100%</b><small>تصميم متجاوب</small></div><div class="stat"><b>RS</b><small>راني سلاير</small></div></div>
-<section id="products"><div class="sectionhead"><h2>تسوّق المنتجات</h2><p>اختر المنتج وأضفه إلى سلتك</p></div><div class="tools"><input class="search" id="search" placeholder="ابحث عن منتج..." oninput="render()"><div id="filters"></div></div><div class="grid" id="grid"></div></section>
+<section id="products"><div class="sectionhead"><h2>تسوّق المنتجات</h2><p>اختر المنتج وأضفه إلى سلتك</p></div><div class="tools"><input class="search" id="search" placeholder="ابحث عن هاتف أو إكسسوار..." oninput="render()"><select class="search" id="sort" aria-label="ترتيب المنتجات" onchange="render()" style="flex:0 1 210px"><option value="new">الأحدث إضافة</option><option value="low">السعر: من الأقل للأعلى</option><option value="high">السعر: من الأعلى للأقل</option><option value="name">الاسم أبجديًا</option></select><div id="filters"></div></div><p id="resultCount" aria-live="polite"></p><div class="grid" id="grid"></div><div class="notice" style="margin-top:16px">تنبيه: الأسعار المعروضة تقديرية لسوق تعز وليست تأكيدًا لسعر المورد. يرجى التأكد من السعر والتوفر قبل إتمام الشراء.</div></section>
 <section id="offers" class="banner"><div><div class="eyebrow">عروض راني سلاير</div><h2>فرصتك لاختيار الأفضل</h2><p>تابع العروض والمنتجات الجديدة باستمرار.</p></div><a href="#products" class="btn gold" style="text-decoration:none">تصفح المنتجات</a></section>
 <section id="contact" class="sectionhead"><h2>نحن هنا لمساعدتك</h2><p>سيتم إضافة قنوات التواصل عند تجهيز بيانات المتجر.</p></section></main>
 <footer><div class="wrap">© <span id="year"></span> RANI SLAYER — جميع الحقوق محفوظة</div></footer>
@@ -44,13 +44,18 @@ function render() {
     (filter==="الكل" || p.cat===filter) &&
     (p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q))
   );
+  const sort = document.getElementById("sort")?.value || "new";
+  if (sort==="low") list.sort((a,b)=>a.price-b.price);
+  else if (sort==="high") list.sort((a,b)=>b.price-a.price);
+  else if (sort==="name") list.sort((a,b)=>a.name.localeCompare(b.name,"ar"));
+  document.getElementById("resultCount").textContent = "عرض " + list.length + " من " + products.length + " منتجًا";
   document.getElementById("grid").innerHTML = list.length ? list.map(p => {
     const image = safeImage(p.image_url);
     const visual = image
       ? '<img src="'+esc(image)+'" alt="'+esc(p.name)+'" style="width:100%;height:100%;object-fit:cover">'
       : (p.cat.includes("إلكترون") ? "📱" : p.cat.includes("أزياء") ? "🎒" : "✦");
     const soldOut = Number(p.stock) < 1;
-    return '<article class="product"><div class="photo">'+visual+'</div><div class="pbody"><h3>'+esc(p.name)+'</h3><p>'+esc(p.desc)+'</p><span class="price">'+money(p.price)+'</span><div class="pfoot"><small>'+esc(p.cat)+' · '+(soldOut?"نفد المخزون":"المتوفر: "+esc(p.stock))+'</small><button class="btn gold" '+(soldOut?"disabled":"")+' onclick="add('+esc(JSON.stringify(p.id))+')">'+(soldOut?"غير متوفر":"أضف للسلة +")+'</button></div></div></article>';
+    return '<article class="product"><div class="photo">'+visual+'</div><div class="pbody"><h3>'+esc(p.name)+'</h3><p>'+esc(p.desc)+'</p><span class="price">'+money(p.price)+'</span><small style="display:block;color:#d5bd8a;margin-top:4px">سعر تقديري · قابل للتأكيد</small><div class="pfoot"><small>'+esc(p.cat)+' · '+(soldOut?"نفد المخزون":"المتوفر: "+esc(p.stock))+'</small><button class="btn gold" '+(soldOut?"disabled":"")+' onclick="add('+esc(JSON.stringify(p.id))+')">'+(soldOut?"غير متوفر":"أضف للسلة +")+'</button></div></div></article>';
   }).join("") : '<div class="empty">'+(products.length?"لا توجد منتجات مطابقة.":"لا توجد منتجات منشورة حالياً.")+'</div>';
 }
 function setFilter(value) { filter=value; render(); }
