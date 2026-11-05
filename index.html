@@ -16,14 +16,111 @@
 <footer><div class="wrap">© <span id="year"></span> RANI SLAYER — جميع الحقوق محفوظة</div></footer>
 <div class="modal" id="cartModal" onclick="if(event.target===this)closeCart()"><div class="dialog"><div class="dialoghead"><h2>سلة المشتريات</h2><button class="btn" onclick="closeCart()">إغلاق ×</button></div><div id="cartItems"></div><div class="cartrow"><b>الإجمالي</b><strong class="price" id="total">0 ر.ي</strong></div><div class="field"><label>الاسم</label><input id="customer" placeholder="اسم العميل"></div><div class="field"><label>رقم الهاتف</label><input id="phone" type="tel" placeholder="رقم للتواصل"></div><div class="field"><label>العنوان</label><input id="address" placeholder="المدينة والمنطقة"></div><button class="btn gold" style="width:100%" onclick="placeOrder()">تأكيد الطلب التجريبي</button><div class="notice">هذه نسخة أولية. الطلبات تُحفظ محليًا في هذا المتصفح فقط، ولا تُرسل إلى المتجر أو تحصّل مدفوعات. يلزم ربط قاعدة بيانات وخادم آمن قبل استقبال طلبات حقيقية.</div></div></div>
 <script>
-const products=[{id:1,name:"هاتف ذكي",cat:"إلكترونيات",price:125000,old:145000,icon:"📱",desc:"هاتف بمواصفات عملية للاستخدام اليومي",offer:"عرض"},{id:2,name:"سماعة لاسلكية",cat:"إلكترونيات",price:18000,old:22000,icon:"🎧",desc:"صوت واضح وتصميم مريح",offer:"خصم"},{id:3,name:"ساعة أنيقة",cat:"إكسسوارات",price:24000,old:0,icon:"⌚",desc:"أناقة وعملية في تصميم واحد",offer:"جديد"},{id:4,name:"حقيبة عصرية",cat:"أزياء",price:16000,old:19000,icon:"🎒",desc:"حقيبة مناسبة للاستخدام اليومي",offer:"عرض"},{id:5,name:"لوحة مفاتيح",cat:"إلكترونيات",price:14000,old:0,icon:"⌨️",desc:"تجربة كتابة مريحة",offer:""},{id:6,name:"نظارة شمسية",cat:"إكسسوارات",price:9500,old:12000,icon:"🕶️",desc:"تصميم عصري وخفيف",offer:"خصم"},{id:7,name:"حذاء رياضي",cat:"أزياء",price:28000,old:0,icon:"👟",desc:"راحة وأناقة للحركة اليومية",offer:""},{id:8,name:"كاميرا صغيرة",cat:"إلكترونيات",price:52000,old:60000,icon:"📷",desc:"التقط لحظاتك المميزة",offer:"عرض"}];
-let cart=JSON.parse(localStorage.getItem("rs_cart")||"[]"),filter="الكل";const money=n=>new Intl.NumberFormat("ar-YE").format(n)+" ر.ي";
-function save(){localStorage.setItem("rs_cart",JSON.stringify(cart));document.getElementById("count").textContent=cart.reduce((s,x)=>s+x.qty,0)}
-function render(){let cats=["الكل",...new Set(products.map(p=>p.cat))];document.getElementById("filters").innerHTML=cats.map(c=>'<button class="chip '+(filter===c?"active":"")+'" onclick="filter='+JSON.stringify(c)+';render()">'+c+'</button>').join("");let q=document.getElementById("search").value.trim().toLowerCase(),list=products.filter(p=>(filter==="الكل"||p.cat===filter)&&(p.name.toLowerCase().includes(q)||p.desc.toLowerCase().includes(q)));document.getElementById("grid").innerHTML=list.length?list.map(p=>'<article class="product"><div class="photo">'+p.icon+'</div><div class="pbody"><h3>'+p.name+'</h3><p>'+p.desc+'</p><span class="price">'+money(p.price)+'</span>'+(p.old?'<span class="old">'+money(p.old)+'</span>':'')+'<div class="pfoot"><small>'+p.cat+'</small><button class="btn gold" onclick="add('+p.id+')">أضف للسلة +</button></div></div></article>').join(""):'<div class="empty">لا توجد منتجات مطابقة.</div>'}
-function add(id){let x=cart.find(x=>x.id===id);if(x)x.qty++;else cart.push({id,qty:1});save();openCart()}
-function openCart(){document.getElementById("cartModal").classList.add("show");drawCart()}function closeCart(){document.getElementById("cartModal").classList.remove("show")}
-function drawCart(){let el=document.getElementById("cartItems");el.innerHTML=cart.length?cart.map(x=>{let p=products.find(p=>p.id===x.id);return '<div class="cartrow"><div><b>'+p.name+'</b><div>'+money(p.price)+' × '+x.qty+'</div></div><div><button class="btn" onclick="change('+x.id+',-1)">−</button> <button class="btn" onclick="change('+x.id+',1)">+</button> <button class="btn" onclick="removeItem('+x.id+')">حذف</button></div></div>'}).join(""):'<p class="empty">سلتك فارغة.</p>';document.getElementById("total").textContent=money(cart.reduce((s,x)=>s+products.find(p=>p.id===x.id).price*x.qty,0))}
-function change(id,n){let x=cart.find(x=>x.id===id);if(x)x.qty+=n;cart=cart.filter(x=>x.qty>0);save();drawCart()}function removeItem(id){cart=cart.filter(x=>x.id!==id);save();drawCart()}
-function placeOrder(){if(!cart.length)return alert("السلة فارغة");let name=document.getElementById("customer").value.trim(),phone=document.getElementById("phone").value.trim(),address=document.getElementById("address").value.trim();if(!name||!phone||!address)return alert("يرجى تعبئة الاسم ورقم الهاتف والعنوان");let orders=JSON.parse(localStorage.getItem("rs_demo_orders")||"[]");orders.push({name,phone,address,items:cart,total:cart.reduce((s,x)=>s+products.find(p=>p.id===x.id).price*x.qty,0),date:new Date().toISOString()});localStorage.setItem("rs_demo_orders",JSON.stringify(orders));cart=[];save();drawCart();alert("تم حفظ طلب تجريبي على هذا الجهاز فقط. لم يتم إرساله إلى المتجر.")}
-document.getElementById("year").textContent=new Date().getFullYear();save();render();
+const SUPABASE_URL = "https://xrlzsdccmibxyzezfvxb.supabase.co";
+const SUPABASE_KEY = "sb_publishable_W_PkS3AnzNs8rW7-Fk7mzQ_RYghdqOJ";
+const ORDER_URL = SUPABASE_URL + "/functions/v1/create-order";
+const headers = { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY };
+let products = [];
+let cart = JSON.parse(localStorage.getItem("rs_cart") || "[]");
+let filter = "الكل";
+const money = n => new Intl.NumberFormat("ar-YE").format(Number(n) || 0) + " ر.ي";
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function safeImage(url) {
+  try { const u = new URL(url); return u.protocol === "https:" ? u.href : ""; }
+  catch { return ""; }
+}
+function save() {
+  localStorage.setItem("rs_cart", JSON.stringify(cart));
+  document.getElementById("count").textContent = cart.reduce((s,x)=>s+x.qty,0);
+}
+function render() {
+  const cats = ["الكل", ...new Set(products.map(p => p.cat).filter(Boolean))];
+  if (!cats.includes(filter)) filter = "الكل";
+  document.getElementById("filters").innerHTML = cats.map(c =>
+    '<button class="chip '+(filter===c?"active":"")+'" onclick="setFilter('+JSON.stringify(c)+')">'+esc(c)+'</button>'
+  ).join("");
+  const q = document.getElementById("search").value.trim().toLowerCase();
+  const list = products.filter(p =>
+    (filter==="الكل" || p.cat===filter) &&
+    (p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q))
+  );
+  document.getElementById("grid").innerHTML = list.length ? list.map(p => {
+    const image = safeImage(p.image_url);
+    const visual = image
+      ? '<img src="'+esc(image)+'" alt="'+esc(p.name)+'" style="width:100%;height:100%;object-fit:cover">'
+      : (p.cat.includes("إلكترون") ? "📱" : p.cat.includes("أزياء") ? "🎒" : "✦");
+    const soldOut = Number(p.stock) < 1;
+    return '<article class="product"><div class="photo">'+visual+'</div><div class="pbody"><h3>'+esc(p.name)+'</h3><p>'+esc(p.desc)+'</p><span class="price">'+money(p.price)+'</span><div class="pfoot"><small>'+esc(p.cat)+' · '+(soldOut?"نفد المخزون":"المتوفر: "+esc(p.stock))+'</small><button class="btn gold" '+(soldOut?"disabled":"")+' onclick="add('+JSON.stringify(p.id)+')">'+(soldOut?"غير متوفر":"أضف للسلة +")+'</button></div></div></article>';
+  }).join("") : '<div class="empty">'+(products.length?"لا توجد منتجات مطابقة.":"لا توجد منتجات منشورة حالياً.")+'</div>';
+}
+function setFilter(value) { filter=value; render(); }
+async function loadProducts() {
+  const grid = document.getElementById("grid");
+  grid.innerHTML = '<div class="empty">جارٍ تحميل المنتجات...</div>';
+  try {
+    const res = await fetch(SUPABASE_URL + "/rest/v1/products?select=id,name,description,price_yer,stock,image_url,categories(name)&is_active=eq.true&order=created_at.desc", {headers});
+    if (!res.ok) throw new Error("تعذر تحميل المنتجات");
+    const rows = await res.json();
+    products = rows.map(p => ({
+      id:p.id, name:p.name, desc:p.description || "", price:Number(p.price_yer),
+      stock:Number(p.stock), image_url:p.image_url || "", cat:p.categories?.name || "عام"
+    }));
+    const validIds = new Set(products.map(p=>p.id));
+    cart = cart.filter(x=>validIds.has(x.id));
+    save(); render(); drawCart();
+  } catch (e) {
+    grid.innerHTML = '<div class="empty">تعذر تحميل المنتجات حالياً. تحقق من اتصال الإنترنت وحاول تحديث الصفحة.</div>';
+    console.error(e);
+  }
+}
+function add(id) {
+  const p=products.find(p=>p.id===id); if(!p || p.stock<1) return;
+  const x=cart.find(x=>x.id===id);
+  if(x) { if(x.qty>=p.stock) return alert("لا توجد كمية إضافية متاحة"); x.qty++; }
+  else cart.push({id,qty:1});
+  save(); openCart();
+}
+function openCart(){document.getElementById("cartModal").classList.add("show");drawCart();}
+function closeCart(){document.getElementById("cartModal").classList.remove("show");}
+function drawCart(){
+  cart=cart.filter(x=>products.some(p=>p.id===x.id));
+  const el=document.getElementById("cartItems");
+  el.innerHTML=cart.length?cart.map(x=>{
+    const p=products.find(p=>p.id===x.id);
+    return '<div class="cartrow"><div><b>'+esc(p.name)+'</b><div>'+money(p.price)+' × '+x.qty+'</div></div><div><button class="btn" onclick="change('+JSON.stringify(x.id)+',-1)">−</button> <button class="btn" onclick="change('+JSON.stringify(x.id)+',1)">+</button> <button class="btn" onclick="removeItem('+JSON.stringify(x.id)+')">حذف</button></div></div>';
+  }).join(""):'<p class="empty">سلتك فارغة.</p>';
+  document.getElementById("total").textContent=money(cart.reduce((s,x)=>s+products.find(p=>p.id===x.id).price*x.qty,0));
+  save();
+}
+function change(id,n){
+  const x=cart.find(x=>x.id===id), p=products.find(p=>p.id===id);
+  if(!x||!p)return;
+  if(n>0 && x.qty>=p.stock)return alert("الكمية المطلوبة تتجاوز المخزون");
+  x.qty+=n; cart=cart.filter(x=>x.qty>0); save(); drawCart();
+}
+function removeItem(id){cart=cart.filter(x=>x.id!==id);save();drawCart();}
+async function placeOrder(){
+  if(!cart.length)return alert("السلة فارغة");
+  const name=document.getElementById("customer").value.trim();
+  const phone=document.getElementById("phone").value.trim();
+  const address=document.getElementById("address").value.trim();
+  if(name.length<2||phone.length<7||address.length<4)return alert("يرجى إدخال الاسم ورقم هاتف صحيح والعنوان");
+  const button=document.querySelector("#cartModal .dialog > button.gold");
+  button.disabled=true; button.textContent="جارٍ إرسال الطلب...";
+  try {
+    const res=await fetch(ORDER_URL,{
+      method:"POST",
+      headers:{...headers,"Content-Type":"application/json"},
+      body:JSON.stringify({customer_name:name,phone,address,items:cart.map(x=>({product_id:x.id,quantity:x.qty}))})
+    });
+    const result=await res.json();
+    if(!res.ok)throw new Error(result.error||"تعذر إرسال الطلب");
+    cart=[];save();drawCart();closeCart();
+    alert("تم استلام طلبك بنجاح. رقم الطلب: "+result.order_id);
+    await loadProducts();
+  } catch(e) { alert(e.message||"تعذر إرسال الطلب. حاول مجدداً."); }
+  finally {button.disabled=false;button.textContent="تأكيد الطلب";}
+}
+document.getElementById("year").textContent=new Date().getFullYear();
+save(); loadProducts();
 </script></body></html>
