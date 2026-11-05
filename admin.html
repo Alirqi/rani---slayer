@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#090e1b"><title>إدارة راني سلاير</title>
+<style>
+:root{--bg:#090e1b;--panel:#111a2d;--gold:#e8b95e;--text:#f7f8fc;--muted:#aab4c8;--line:#283650}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Tahoma,Arial}main{width:min(1100px,94%);margin:30px auto}h1,h2{margin-top:0}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin:14px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.field{display:grid;gap:6px;margin:10px 0}input,textarea,select{width:100%;padding:11px;border:1px solid var(--line);border-radius:9px;background:#0b1221;color:white;font:inherit}button,.btn{padding:10px 14px;border:0;border-radius:9px;background:var(--gold);color:#17120a;font-weight:800;cursor:pointer}button.secondary{background:#25344f;color:white;border:1px solid var(--line)}button.danger{background:#632d36;color:white}button:disabled{opacity:.5;cursor:not-allowed}.muted{color:var(--muted)}.hidden{display:none}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between}.item{border-bottom:1px solid var(--line);padding:12px 0}.item:last-child{border:0}.notice{background:#e8b95e15;border:1px solid #8e713c;padding:12px;border-radius:10px;line-height:1.8}.error{color:#ff9b9b}.success{color:#9be0a9}a{color:var(--gold)}
+</style>
+</head><body><main>
+<div class="row"><div><h1>إدارة راني سلاير</h1><p class="muted">لوحة إدارة المنتجات والطلبات</p></div><a href="./">العودة للمتجر</a></div>
+<section id="login" class="panel">
+<h2>دخول المدير</h2>
+<p class="muted">سجّل الدخول بحساب Supabase الذي أُضيف إلى قائمة المديرين.</p>
+<div class="field"><label>البريد الإلكتروني</label><input id="email" type="email" autocomplete="username"></div>
+<div class="field"><label>كلمة المرور</label><input id="password" type="password" autocomplete="current-password"></div>
+<button id="loginBtn">تسجيل الدخول</button>
+<p id="loginMsg" role="status"></p>
+</section>
+<section id="app" class="hidden">
+<div class="panel row"><div><b id="who"></b><div class="muted">جلسة إدارة المتجر</div></div><button class="secondary" id="logout">تسجيل الخروج</button></div>
+<div class="panel"><h2>إضافة منتج</h2><div class="grid">
+<div class="field"><label>اسم المنتج</label><input id="pname" maxlength="160"></div>
+<div class="field"><label>التصنيف</label><select id="pcat"></select></div>
+<div class="field"><label>السعر بالريال اليمني</label><input id="pprice" type="number" min="0" step="1"></div>
+<div class="field"><label>الكمية</label><input id="pstock" type="number" min="0" step="1"></div>
+<div class="field"><label>رابط صورة HTTPS (اختياري)</label><input id="pimage" type="url" placeholder="https://..."></div>
+<div class="field"><label>الوصف</label><input id="pdesc" maxlength="1000"></div>
+</div><button id="addProduct">حفظ المنتج</button><p id="productMsg" role="status"></p></div>
+<div class="panel"><h2>المنتجات</h2><div id="products">جار التحميل...</div></div>
+<div class="panel"><h2>الطلبات</h2><div id="orders">جار التحميل...</div></div>
+<div class="panel"><h2>معرّف حسابك</h2><p class="muted">إذا لم يكن حسابك مضافاً كمدير، انسخ هذا المعرّف وأرسله لصاحب المشروع ليضيفه إلى admin_users.</p><div class="row"><code id="uid"></code><button class="secondary" id="copyUid">نسخ المعرّف</button></div></div>
+</section>
+<p class="muted">لا تشارك كلمة مرورك أو مفاتيح Supabase السرية.</p>
+</main>
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+const URL="https://xrlzsdccmibxyzezfvxb.supabase.co";
+const KEY="sb_publishable_W_PkS3AnzNs8rW7-Fk7mzQ_RYghdqOJ";
+const db=createClient(URL,KEY);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money=n=>new Intl.NumberFormat("ar-YE").format(Number(n)||0)+" ر.ي";
+let cats=[];
+function msg(id,text,ok=false){$(id).textContent=text;$(id).className=ok?"success":"error";}
+async function refresh(){
+ const {data:catData,error:ce}=await db.from("categories").select("id,name").eq("is_active",true).order("name");
+ if(ce)throw ce; cats=catData||[];
+ $("pcat").innerHTML=cats.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>').join("");
+ const {data:products,error:pe}=await db.from("products").select("id,name,price_yer,stock,is_active,categories(name)").order("created_at",{ascending:false});
+ if(pe)throw pe;
+ $("products").innerHTML=(products||[]).map(p=>'<div class="item row"><div><b>'+esc(p.name)+'</b><div class="muted">'+esc(p.categories?.name||"عام")+' · '+money(p.price_yer)+' · المخزون '+p.stock+' · '+(p.is_active?"نشط":"مخفي")+'</div></div><div class="row"><button class="secondary" data-stock="'+p.id+'">تعديل المخزون</button><button class="'+(p.is_active?"danger":"secondary")+'" data-toggle="'+p.id+'" data-active="'+p.is_active+'">'+(p.is_active?"إخفاء":"نشر")+'</button></div></div>').join("")||"لا توجد منتجات.";
+ const {data:orders,error:oe}=await db.from("orders").select("id,customer_name,phone,address,status,total_yer,created_at,order_items(product_name,quantity,unit_price_yer)").order("created_at",{ascending:false}).limit(100);
+ if(oe)throw oe;
+ const statuses={pending:"قيد الانتظار",confirmed:"تم التأكيد",processing:"قيد التجهيز",shipped:"تم الشحن",completed:"مكتمل",cancelled:"ملغي"};
+ $("orders").innerHTML=(orders||[]).map(o=>'<div class="item"><div class="row"><b>طلب '+esc(o.id.slice(0,8))+' · '+esc(o.customer_name)+'</b><b>'+money(o.total_yer)+'</b></div><div class="muted">الهاتف: '+esc(o.phone)+' · العنوان: '+esc(o.address)+'</div><div class="muted">'+(o.order_items||[]).map(i=>esc(i.product_name)+' × '+i.quantity).join("، ")+'</div><div class="row" style="margin-top:8px"><span>الحالة: '+esc(statuses[o.status]||o.status)+'</span><select data-status="'+o.id+'" style="max-width:180px">'+Object.entries(statuses).map(([v,l])=>'<option value="'+v+'" '+(o.status===v?"selected":"")+'>'+l+'</option>').join("")+'</select></div></div>').join("")||"لا توجد طلبات حتى الآن.";
+}
+async function showApp(user){
+ $("login").classList.add("hidden");$("app").classList.remove("hidden");
+ $("who").textContent=user.email||"مدير المتجر";$("uid").textContent=user.id;
+ try{await refresh();}catch(e){msg("productMsg","تعذر تحميل لوحة الإدارة: "+e.message);}
+}
+$("loginBtn").onclick=async()=>{
+ $("loginBtn").disabled=true;msg("loginMsg","جار التحقق...",true);
+ const {data,error}=await db.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
+ $("loginBtn").disabled=false;
+ if(error){msg("loginMsg","تعذر تسجيل الدخول: "+error.message);return;}
+ await showApp(data.user);
+};
+$("logout").onclick=async()=>{await db.auth.signOut();location.reload();};
+$("addProduct").onclick=async()=>{
+ const name=$("pname").value.trim(),price=Number($("pprice").value),stock=Number($("pstock").value),image=$("pimage").value.trim();
+ if(!name||!Number.isFinite(price)||price<0||!Number.isInteger(stock)||stock<0){msg("productMsg","أدخل اسماً وسعراً ومخزوناً صحيحاً.");return;}
+ if(image && !image.startsWith("https://")){msg("productMsg","رابط الصورة يجب أن يبدأ بـ HTTPS.");return;}
+ const {error}=await db.from("products").insert({name,category_id:$("pcat").value||null,description:$("pdesc").value.trim(),price_yer:price,stock,image_url:image||null,is_active:true});
+ if(error){msg("productMsg","تعذر الحفظ: "+error.message);return;}
+ msg("productMsg","تمت إضافة المنتج.",true);["pname","pprice","pstock","pimage","pdesc"].forEach(id=>$(id).value="");await refresh();
+};
+$("products").addEventListener("click",async e=>{
+ const stockId=e.target.dataset.stock,toggleId=e.target.dataset.toggle;
+ if(stockId){const v=prompt("أدخل الكمية الجديدة:");if(v===null)return;const n=Number(v);if(!Number.isInteger(n)||n<0)return alert("الكمية غير صحيحة");const {error}=await db.from("products").update({stock:n}).eq("id",stockId);if(error)alert(error.message);else await refresh();}
+ if(toggleId){const active=e.target.dataset.active==="true";const {error}=await db.from("products").update({is_active:!active}).eq("id",toggleId);if(error)alert(error.message);else await refresh();}
+});
+$("orders").addEventListener("change",async e=>{
+ const id=e.target.dataset.status;if(!id)return;
+ const {error}=await db.from("orders").update({status:e.target.value}).eq("id",id);
+ if(error){alert("تعذر تحديث الحالة: "+error.message);await refresh();}else await refresh();
+});
+$("copyUid").onclick=async()=>{await navigator.clipboard.writeText($("uid").textContent);$("copyUid").textContent="تم النسخ";};
+const {data:{user}}=await db.auth.getUser();if(user)await showApp(user);
+</script></body></html>
