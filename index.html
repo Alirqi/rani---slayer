@@ -63,12 +63,23 @@ async function loadProducts() {
   const grid = document.getElementById("grid");
   grid.innerHTML = '<div class="empty">جارٍ تحميل المنتجات...</div>';
   try {
-    const res = await fetch(SUPABASE_URL + "/rest/v1/products?select=id,name,description,price_yer,stock,image_url,categories(name)&is_active=eq.true&order=created_at.desc", {headers});
-    if (!res.ok) throw new Error("تعذر تحميل المنتجات");
-    const rows = await res.json();
+    const [productsRes, categoriesRes] = await Promise.all([
+      fetch(SUPABASE_URL + "/rest/v1/products?select=id,category_id,name,description,price_yer,stock,image_url&is_active=eq.true&order=created_at.desc", {headers, cache:"no-store"}),
+      fetch(SUPABASE_URL + "/rest/v1/categories?select=id,name&is_active=eq.true", {headers, cache:"no-store"})
+    ]);
+    if (!productsRes.ok) {
+      const detail = await productsRes.text();
+      throw new Error("المنتجات (" + productsRes.status + "): " + detail.slice(0,180));
+    }
+    if (!categoriesRes.ok) {
+      const detail = await categoriesRes.text();
+      throw new Error("التصنيفات (" + categoriesRes.status + "): " + detail.slice(0,180));
+    }
+    const [rows, categoryRows] = await Promise.all([productsRes.json(), categoriesRes.json()]);
+    const categoryNames = new Map(categoryRows.map(c => [c.id, c.name]));
     products = rows.map(p => ({
       id:p.id, name:p.name, desc:p.description || "", price:Number(p.price_yer),
-      stock:Number(p.stock), image_url:p.image_url || "", cat:p.categories?.name || "عام"
+      stock:Number(p.stock), image_url:p.image_url || "", cat:categoryNames.get(p.category_id) || "عام"
     }));
     const validIds = new Set(products.map(p=>p.id));
     cart = cart.filter(x=>validIds.has(x.id));
